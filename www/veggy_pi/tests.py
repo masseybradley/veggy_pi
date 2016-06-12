@@ -111,18 +111,21 @@ class TestVeggyConfiguration(TestCase):
         self.override_config.save()
         self.temp_config.save()
             
-        self.temp_input = ConfigurationOption(option_label=u'temperature')
-        self.humidity_input = ConfigurationOption(option_label=u'humidity')
-        self.temp_input.save()
-        self.humidity_input.save()
+        self.temp_option = ConfigurationOption(option_label=u'temperature')
+        self.humidity_option = ConfigurationOption(option_label=u'humidity')
+        self.temp_option.save()
+        self.humidity_option.save()
 
-        self.max_temp = ConfigurationOption(option_label=u'max_temp', parent_option=self.temp_input)
-        self.min_temp = ConfigurationOption(option_label=u'min_temp', parent_option=self.temp_input)
+        self.temp_format = ConfigurationOption(option_label=u'temp_format', parent_option=self.temp_option)
+        self.temp_format.save()
+
+        self.max_temp = ConfigurationOption(option_label=u'max_temp', parent_option=self.temp_option)
+        self.min_temp = ConfigurationOption(option_label=u'min_temp', parent_option=self.temp_option)
         self.min_temp.save()
         self.max_temp.save()
 
-        self.max_rh = ConfigurationOption(option_label=u'max_rh', parent_option=self.humidity_input)
-        self.min_rh = ConfigurationOption(option_label=u'min_rh', parent_option=self.humidity_input)
+        self.max_rh = ConfigurationOption(option_label=u'max_rh', parent_option=self.humidity_option)
+        self.min_rh = ConfigurationOption(option_label=u'min_rh', parent_option=self.humidity_option)
         self.max_rh.save()
         self.min_rh.save()
 
@@ -130,6 +133,9 @@ class TestVeggyConfiguration(TestCase):
         self.max_ph = ConfigurationOption(option_label=u'max_ph')
         self.min_ph.save()
         self.max_ph.save()
+
+        self.user_temp_format = UserInput(veggy_config=self.main_config, variable=self.temp_format, value=u'celcius')
+        self.user_temp_format.save()
 
         self.user_min_ph = UserInput(veggy_config=self.main_config, variable=self.min_ph, value=u'5.5')
         self.user_max_ph = UserInput(veggy_config=self.main_config, variable=self.max_ph, value=u'12')
@@ -175,13 +181,13 @@ class TestVeggyConfiguration(TestCase):
         # verify that the values_list returned by a configuration instance
         # contains all configuration items linked to that instance as well as
         # parent instance items
-        self.assertTrue(len(self.main_config_items) == 2)
-        self.assertTrue(len(self.day_config_items) == 4)
-        self.assertTrue(len(self.override_config_items) == 5)
-        self.assertTrue(len(self.temp_config_items) == 7)
+        self.assertTrue(len(self.main_config_items) == 3)
+        self.assertTrue(len(self.day_config_items) == 5)
+        self.assertTrue(len(self.override_config_items) == 6)
+        self.assertTrue(len(self.temp_config_items) == 8)
         # night config does not define any variables but still
         # inherits the main_config (parent) items
-        self.assertTrue(len(self.night_config_items) == 2)
+        self.assertTrue(len(self.night_config_items) == 3)
     
     def test_infinite_recursion_protection(self):
         # parent config has a child config which has a pointer back to the
@@ -282,3 +288,40 @@ class TestVeggyConfiguration(TestCase):
         
         exception = ex.exception
         self.assertEquals(exception.args, (u'%s must be in range %s' % (float(self.user_min_ph.value), self.ph_range),))
+    
+    def test_temp_input_with_invalid_format(self):
+        self.user_temp_format.value = u'inexistant'
+        self.user_temp_format.save()
+
+        self.config_list = []
+        self.values = []
+        values = self.main_config.get_values(self.config_list, self.values)
+
+        with self.assertRaises(ValueError) as ex:
+            self.temp_config.validate_unique_values(self.temp_config.get_unique_values(self.temp_config.get_values(self.config_list, self.values), debug=True))
+        
+        exception = ex.exception
+        self.assertEquals(exception.args, (u'acceptable values are: celcius, farenheit or kelvin',))
+    
+    def test_temp_input_with_no_format(self):
+        """
+        temp input values without a format with raise an exception
+        """
+        self.user_temp_format.delete()
+
+        self.config_list = []
+        self.values = []
+        values = self.main_config.get_values(self.config_list, self.values)
+
+        with self.assertRaises(ValueError) as ex:
+            self.temp_config.validate_unique_values(self.temp_config.get_unique_values(self.temp_config.get_values(self.config_list, self.values), debug=True))
+        
+        exception = ex.exception
+        print exception.args
+        self.assertEquals(exception.args, ('temp_input elements require a temperature format type',))
+ 
+
+    def tearDown(self):
+        VeggyConfiguration.objects.all().delete()
+        UserInput.objects.all().delete()
+        ConfigurationOption.objects.all().delete()

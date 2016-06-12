@@ -56,7 +56,7 @@ class VeggyConfiguration(models.Model):
         configuratoin elements order.
         """
         if not values:
-            raise ValueError('empty list')
+            raise ValueError(_('empty list'))
 
         if debug:
             print "\n input ------------------------------------------------------------"
@@ -92,7 +92,7 @@ class VeggyConfiguration(models.Model):
         Condition(s) and ConditionGroups instances.
         """
         if not values:
-            raise ValueError(u'empty list')
+            raise ValueError(_(u'empty list'))
         
         for elem in values:
             option = ConfigurationOption.objects.get(pk=elem[u'variable_id'])
@@ -110,22 +110,62 @@ class VeggyConfiguration(models.Model):
                 min_rh = int(elem[u'value'])
             elif option.option_label == u'max_rh':
                 max_rh = int(elem[u'value'])
+            elif option.option_label == u'temp_format':
+                temp_format = elem[u'value']
+                # temperature format field which will define which conversion
+                # type should be used i.e. celcius -> farenheit and the max_range
+                # for each.
+                if elem[u'value'] == u'celcius':
+                    temp_range = range(-273,100)
+                elif elem[u'value'] == u'farenheit':
+                    temp_range = range(-459, 212)
+                elif elem[u'value'] == u'kelvin':
+                    temp_range = range(0,373)
+                else:
+                    raise ValueError(_(u'acceptable values are: celcius, farenheit or kelvin'))
 
+        # user input validation
+        # temperatur
+        if min_temp or max_temp:
+            try:
+                if not temp_range:
+                    pass
+            # variable would be unbound if temp input items end up
+            # in a config without a temperature format type therefore no range.
+            except UnboundLocalError:
+                raise ValueError(_(u'temp_input elements require a temperature format type'))
+
+            if min_temp:
+                validate_value_in_range(val=min_temp, max_range=temp_range)
+                    
+            if max_temp: 
+                validate_value_in_range(val=max_temp, max_range=temp_range)
         if min_temp and max_temp:
-            validate_greater_than(min_val=min_temp, max_val=max_temp)
-        
+            validate_greater_than(max_val=max_temp, min_val=min_temp)
+
+        # ph 
         if min_ph or max_ph:
             ph_range = range(15)[1:]    
             if min_ph:
                 validate_value_in_range(val=min_ph, max_range=ph_range)
             if max_ph:
                 validate_value_in_range(val=max_ph, max_range=ph_range)
-        
-        if min_ec and max_ec:
-            validate_greater_than(min_val=min_ec, max_val=min_ec)
-
         if min_ph and max_ph:
-            validate_greater_than(min_val=min_ph, max_val=max_ph)
+            validate_greater_than(max_val=max_ph, min_val=min_ph)
+
+        # ec
+        if min_ec and max_ec:
+            validate_greater_than(max_val=max_ec, min_val=min_ec)
+        
+        # relative humidity
+        if min_rh or max_rh:
+            rh_range = range(0,100)
+            if min_rh:
+                validate_value_in_range(val=min_rh, max_range=rh_range)
+            if max_rh:
+                validate_value_in_range(val=max_rh, max_range=rh_range)
+        if min_rh and max_rh:
+            validate_greater_than(max_val=max_rh, min_val=min_rh) 
 
 
 # static validation methods
@@ -134,12 +174,12 @@ class VeggyConfiguration(models.Model):
 # transformed into a condition group maybe?
 def validate_greater_than(max_val, min_val):
     if min_val > max_val or min_val == max_val:
-        raise ValueError('%s must not be greater than %s' % (min_val, max_val))   
+        raise ValueError(_('%s must not be greater than %s' % (min_val, max_val))) 
         
 
 def validate_value_in_range(val, max_range):
     if val not in max_range:
-        raise ValueError('%s must be in range %s' % (val, max_range))
+        raise ValueError(_('%s must be in range %s' % (val, max_range)))
 
 
 class UserInput(models.Model):
