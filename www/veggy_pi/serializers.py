@@ -28,13 +28,13 @@ class UserSerializer(serializers.ModelSerializer):
         }
     
 
-class RPiPinSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RPiPin
-        fields = (u'pin', u'label')
-    
-    def get_links(self, obj):
-        request = self.context[u'request']
-        return {
-            u'self': reverse(u'rpipin-detail', kwargs={u'pk': obj.pk}, request=request)
-        }
+# class RPiPinSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = RPiPin
+#         fields = (u'pin', u'label')
+#     
+#     def get_links(self, obj):
+#         request = self.context[u'request']
+#         return {
+#             u'self': reverse(u'rpipin-detail', kwargs={u'pk': obj.pk}, request=request)
+#         }

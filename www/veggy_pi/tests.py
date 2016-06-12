@@ -104,9 +104,12 @@ class TestVeggyConfiguration(TestCase):
         self.day_config = VeggyConfiguration(label=u'day_config', parent_config=self.main_config)
         self.night_config = VeggyConfiguration(label=u'night_config', parent_config=self.main_config)
         self.override_config = VeggyConfiguration(label=u'override_config', parent_config=self.day_config)
+        self.temp_config = VeggyConfiguration(label=u'temp_config', parent_config=self.override_config)
+
         self.day_config.save()
         self.night_config.save()
         self.override_config.save()
+        self.temp_config.save()
             
         self.temp_input = ConfigurationOption(option_label=u'temperature')
         self.humidity_input = ConfigurationOption(option_label=u'humidity')
@@ -142,37 +145,60 @@ class TestVeggyConfiguration(TestCase):
         self.override_temp = UserInput(veggy_config=self.override_config, variable=self.max_temp, value=u'10')
         self.override_temp.save()
 
-        self.temp_config = VeggyConfiguration(label=u'temp_config', parent_config=self.override_config)
-        self.temp_config.save()
-        
         self.ph_range = range(15)[1:]
-        self.min_ph = UserInput(veggy_config=self.temp_config, variable=self.min_ph, value=u'15')
-        self.max_temp = UserInput(veggy_config=self.temp_config, variable=self.max_temp, value=u'30')
-        self.min_ph.save()
-        self.max_temp.save()
+        self.user_min_ph = UserInput(veggy_config=self.temp_config, variable=self.min_ph, value=u'15')
+        self.user_max_temp = UserInput(veggy_config=self.temp_config, variable=self.max_temp, value=u'30')
+        self.user_min_ph.save()
+        self.user_max_temp.save()
     
-        # main_config
-        #   |-- night_config
-        #    -- day_config
-        #       |-- override_config
-        #           |-- temp_config
+        self.values = []
+        self.config_list = []
+        self.main_config_items = self.main_config.get_values(self.config_list, self.values)
+
+        self.values = []
+        self.config_list = []
+        self.day_config_items = self.day_config.get_values(self.config_list, self.values)
+
+        self.values = []
+        self.config_list = []
+        self.override_config_items = self.override_config.get_values(self.config_list, self.values)
+
+        self.values = []
+        self.config_list = []
+        self.temp_config_items = self.temp_config.get_values(self.config_list, self.values)
+
+        self.values = []
+        self.config_list = []
+        self.night_config_items = self.night_config.get_values(self.config_list, self.values)
+        
+# debug 
+#        for val in self.main_config_items:
+#            print "main_config: ", val
+#        for val in self.day_config_items:
+#            print "day_config: ", val
+#        for val in self.override_config_items:
+#            print "override_config: ", val
+#        for val in self.temp_config_items:
+#            print "temp_config: ", val
 
     def test_get_values(self):
         # verify that the values_list returned by a configuration instance
         # contains all configuration items linked to that instance as well as
         # parent instance items
-        values = self.day_config.get_values()
-        for obj in self.day_config.userinput_set.values():
-            self.assertTrue(obj in values)
-        for obj in self.main_config.userinput_set.values():
-            self.assertTrue(obj in values)
+        self.assertTrue(len(self.main_config_items) == 2)
+        self.assertTrue(len(self.day_config_items) == 4)
+        self.assertTrue(len(self.override_config_items) == 5)
+        self.assertTrue(len(self.temp_config_items) == 7)
+        # night config does not define any variables but still
+        # inherits the main_config (parent) items
+        self.assertTrue(len(self.night_config_items) == 2)
     
     def test_infinite_recursion_protection(self):
         # parent config has a child config which has a pointer back to the
         # parent config instance creating an infinte loop retreiving the config
         # items - the config_list prevents this by keeping track of which config
         # instances have already been traversed and if such circumstances were to 
-    # ever occur you end up with the same values_list no matter from which config 
+        # ever occur you end up with the same values_list no matter from which config 
         # you get_values from
         self.main_config.parent_config = self.day_config
         self.main_config.save()
@@ -194,8 +220,15 @@ class TestVeggyConfiguration(TestCase):
     
     def test_get_unique_values(self):
         # the nature of the recursive function will always return a list
-        # grouped by veggy_config_id
-        values = self.override_config.get_unique_values(self.override_config.get_values())
+        # grouped by veggy_config_id - I think
+        self.config_list = []
+        self.values = []
+        values = self.override_config.get_unique_values(self.override_config.get_values(self.config_list, self.values))
+        # verify override value is in the get_values result set
+        for val in values:
+            if val[u'id'] == self.override_temp.pk:
+                print "override value: ", val
+
         for obj in self.main_config.userinput_set.values():
             self.assertTrue(obj in values)
         for obj in self.day_config.userinput_set.values():
@@ -204,11 +237,16 @@ class TestVeggyConfiguration(TestCase):
         for obj in self.override_config.userinput_set.values():
             if obj[u'variable_id'] == self.max_temp.pk:
                 self.assertTrue(obj in values)
-    
+        # make sure temp_config items are not in the result_set
+        for obj in self.temp_config.userinput_set.values():
+            if obj[u'variable_id'] == self.user_max_temp.pk:
+                self.assertTrue(obj not in values)            
+   
         # reversing the values_list results in the inverse - parent items take 
         # precedence over any duplicate child configuration items
-        values_list = self.override_config.get_values() 
-        values = self.override_config.get_unique_values(values_list[::-1])
+        self.config_list = []
+        self.values = []
+        values = self.override_config.get_unique_values(self.override_config.get_values(self.config_list, self.values)[::-1])
         for obj in self.main_config.userinput_set.values():
             self.assertTrue(obj in values)
         for obj in self.day_config.userinput_set.values():
@@ -219,6 +257,9 @@ class TestVeggyConfiguration(TestCase):
                 self.assertTrue(obj not in values)
 
     def test_empty_unique_values_value_error(self):
+        """
+        an attempt to sort an empty list of values will raise a value error
+        """
         values = []
         with self.assertRaises(ValueError) as ex:
             self.main_config.get_unique_values(values)
@@ -227,21 +268,48 @@ class TestVeggyConfiguration(TestCase):
         self.assertEquals(exception.args, (u'empty list',))
 
     def test_values_greater_than_validation(self):
+        """
+        max_val greater than min_val static method test.
+        """
+        self.config_list = []
+        self.values = []
         with self.assertRaises(ValueError) as ex:
-            self.override_config.validate_unique_values(self.override_config.get_unique_values(self.override_config.get_values()))
+            self.override_config.validate_unique_values(self.override_config.get_unique_values(self.override_config.get_values(self.config_list, self.values)))
         
         exception = ex.exception
         self.assertEquals(exception.args, (u'%s must not be greater than %s' % (self.user_min_temp_day.value, self.override_temp.value),))
     
     def test_values_in_range_validation(self):
-        # still need to review why the values_list in this test seems 
-        # to be either reversed or simply wrong.
-        values_list = self.temp_config.get_values()
-        # for val in values_list:
-        #     print "VALUE: ", val
+#        print "######################################################"
+#        print ""
+#        print "main_config                 pk: ", self.main_config.pk
+#        print "* min_ph                        " 
+#        print "* max_ph                        " 
+#        print "    |- day_config           pk: ", self.day_config.pk
+#        print "       * min_temp               " 
+#        print "       * max_temp               " 
+#        print "        |- override_config  pk: ", self.override_config.pk
+#        print "           * max_temp           " 
+#        print "            |- temp_config  pk: ", self.temp_config.pk
+#        print "               * min_ph         "
+#        print "               * max_temp       "
+#        print "    |- night_config         pk: ", self.night_config.pk
+#
+#        # still need to review why the values_list in this test seems 
+#        # to be either reversed or simply wrong.
+#        print "main_config.parent_config:     ", self.main_config.parent_config
+#        print "day_config.parent_config:      ", self.day_config.parent_config
+#        print "override_config.parent_config: ", self.override_config.parent_config
+#        print "temp_config.parent_config:     ", self.temp_config.parent_config
+#
+        self.config_list = []
+        self.values = []
+        values = self.temp_config.get_values(self.config_list, self.values)
+
+#        print "######################################################"
 
         with self.assertRaises(ValueError) as ex:
-            self.temp_config.validate_unique_values(self.temp_config.get_unique_values(self.temp_config.get_values()[::-1]))
+            self.temp_config.validate_unique_values(self.temp_config.get_unique_values(self.temp_config.get_values(self.config_list, self.values)))
         
         exception = ex.exception
-        self.assertEquals(exception.args, (u'%s must be in range %s' % (float(self.min_ph.value), self.ph_range),))
+        self.assertEquals(exception.args, (u'%s must be in range %s' % (float(self.user_min_ph.value), self.ph_range),))

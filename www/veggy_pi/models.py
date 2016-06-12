@@ -42,7 +42,9 @@ class VeggyConfiguration(models.Model):
         # prevents infinite recursion by avoiding to re-enter a parent item
         # which has already been traversed
         if self.parent_config and self.parent_config.pk not in config_list:
-            self.parent_config.get_values()
+            # passing the default values rather the lists passed to the first 
+            # method call results in buggy behaviour - fixed
+            self.parent_config.get_values(config_list, values)
             
         return values
 
@@ -53,7 +55,7 @@ class VeggyConfiguration(models.Model):
         each variable_id - the order of the value_list will determine the parent / child
         configuratoin elements order.
         """
-        if len(values) == 0:
+        if not values:
             raise ValueError('empty list')
 
         # debug
@@ -95,7 +97,7 @@ class VeggyConfiguration(models.Model):
         config values should always be validated i.e.
         config.validate_unique_values(config.get_unique_values(sorted(config.get_values(), key=...)))
         """
-        if len(values) == 0:
+        if not values:
             raise ValueError(u'empty list')
 
         max_temp = int()
@@ -124,11 +126,12 @@ class VeggyConfiguration(models.Model):
                 validate_value_in_range(min_ph, ph_range)
             if max_ph:
                 validate_value_in_range(max_ph, ph_range)
-            if min_ph and max_ph:
-                validate_greater_than(max_ph, min_ph)
+
+        if min_ph and max_ph:
+            validate_greater_than(max_ph, min_ph)
 
 
-# generic validation methods
+# static validation methods
 def validate_greater_than(max_val, min_val):
     if min_val > max_val or min_val == max_val:
         raise ValueError('%s must not be greater than %s' % (min_val, max_val))   
