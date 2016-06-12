@@ -171,16 +171,6 @@ class TestVeggyConfiguration(TestCase):
         self.config_list = []
         self.night_config_items = self.night_config.get_values(self.config_list, self.values)
         
-# debug 
-#        for val in self.main_config_items:
-#            print "main_config: ", val
-#        for val in self.day_config_items:
-#            print "day_config: ", val
-#        for val in self.override_config_items:
-#            print "override_config: ", val
-#        for val in self.temp_config_items:
-#            print "temp_config: ", val
-
     def test_get_values(self):
         # verify that the values_list returned by a configuration instance
         # contains all configuration items linked to that instance as well as
@@ -203,13 +193,17 @@ class TestVeggyConfiguration(TestCase):
         self.main_config.parent_config = self.day_config
         self.main_config.save()
         
-        values = self.day_config.get_values()
+        self.values = []
+        self.config_list=[]
+        values = self.day_config.get_values(self.config_list, self.values)
         for obj in self.day_config.userinput_set.values():
             self.assertTrue(obj in values)
         for obj in self.main_config.userinput_set.values():
             self.assertTrue(obj in values)
         
-        self.main_config.get_values()
+        self.values = []
+        self.config_list=[]
+        self.main_config.get_values(self.config_list, self.values)
         for obj in self.day_config.userinput_set.values():
             self.assertTrue(obj in values)
         for obj in self.main_config.userinput_set.values():
@@ -220,14 +214,13 @@ class TestVeggyConfiguration(TestCase):
     
     def test_get_unique_values(self):
         # the nature of the recursive function will always return a list
-        # grouped by veggy_config_id - I think
+        # grouped by veggy_config_id
         self.config_list = []
         self.values = []
         values = self.override_config.get_unique_values(self.override_config.get_values(self.config_list, self.values))
-        # verify override value is in the get_values result set
-        for val in values:
-            if val[u'id'] == self.override_temp.pk:
-                print "override value: ", val
+        # for val in values:
+        #     if val[u'id'] == self.override_temp.pk:
+        #         print "override value: ", val
 
         for obj in self.main_config.userinput_set.values():
             self.assertTrue(obj in values)
@@ -274,42 +267,18 @@ class TestVeggyConfiguration(TestCase):
         self.config_list = []
         self.values = []
         with self.assertRaises(ValueError) as ex:
-            self.override_config.validate_unique_values(self.override_config.get_unique_values(self.override_config.get_values(self.config_list, self.values)))
+            self.override_config.validate_unique_values(self.override_config.get_unique_values(self.override_config.get_values(self.config_list, self.values), debug=True))
         
         exception = ex.exception
-        self.assertEquals(exception.args, (u'%s must not be greater than %s' % (self.user_min_temp_day.value, self.override_temp.value),))
+        self.assertEquals(exception.args, (u'%s must not be greater than %s' % (float(self.user_min_temp_day.value), float(self.override_temp.value)),))
     
     def test_values_in_range_validation(self):
-#        print "######################################################"
-#        print ""
-#        print "main_config                 pk: ", self.main_config.pk
-#        print "* min_ph                        " 
-#        print "* max_ph                        " 
-#        print "    |- day_config           pk: ", self.day_config.pk
-#        print "       * min_temp               " 
-#        print "       * max_temp               " 
-#        print "        |- override_config  pk: ", self.override_config.pk
-#        print "           * max_temp           " 
-#        print "            |- temp_config  pk: ", self.temp_config.pk
-#        print "               * min_ph         "
-#        print "               * max_temp       "
-#        print "    |- night_config         pk: ", self.night_config.pk
-#
-#        # still need to review why the values_list in this test seems 
-#        # to be either reversed or simply wrong.
-#        print "main_config.parent_config:     ", self.main_config.parent_config
-#        print "day_config.parent_config:      ", self.day_config.parent_config
-#        print "override_config.parent_config: ", self.override_config.parent_config
-#        print "temp_config.parent_config:     ", self.temp_config.parent_config
-#
         self.config_list = []
         self.values = []
         values = self.temp_config.get_values(self.config_list, self.values)
 
-#        print "######################################################"
-
         with self.assertRaises(ValueError) as ex:
-            self.temp_config.validate_unique_values(self.temp_config.get_unique_values(self.temp_config.get_values(self.config_list, self.values)))
+            self.temp_config.validate_unique_values(self.temp_config.get_unique_values(self.temp_config.get_values(self.config_list, self.values), debug=True))
         
         exception = ex.exception
         self.assertEquals(exception.args, (u'%s must be in range %s' % (float(self.user_min_ph.value), self.ph_range),))

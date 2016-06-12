@@ -49,7 +49,7 @@ class VeggyConfiguration(models.Model):
         return values
 
     @staticmethod
-    def get_unique_values(values):
+    def get_unique_values(values, debug=False):
         """
         takes a values list and returns the list with the first occurrence of
         each variable_id - the order of the value_list will determine the parent / child
@@ -58,33 +58,27 @@ class VeggyConfiguration(models.Model):
         if not values:
             raise ValueError('empty list')
 
-        # debug
-        print "\n input ------------------------------------------------------------"
-        for val in values:
-            print val
-        print "-------------------------------------------------------------------"
+        if debug:
+            print "\n input ------------------------------------------------------------"
+            for val in values:
+                print val
+            print "-------------------------------------------------------------------"
 
         # save a list of unique ids
-        variable_list = []
-        for val in values:
-            if val[u'variable_id'] in variable_list:
-                pass
-            else:
-                variable_list.append(val[u'variable_id'])
+        variable_list = set(v[u'variable_id'] for v in values)
 
         for val in values:
-            # print "got val: ", val
             if val[u'variable_id'] in variable_list: 
                 duplicates = [obj for obj in values if obj.get(u'variable_id') == val[u'variable_id'] and obj != val]
                 for elem in duplicates:
-                    # print "removing element: ", elem
                     values.remove(elem)
 
-        # debug
-        print "\n output ------------------------------------------------------------"
-        for val in values:
-            print val
-        print "--------------------------------------------------------------------"
+        if debug:
+            print "\n output ------------------------------------------------------------"
+            for val in values:
+                print val
+            print "--------------------------------------------------------------------"
+
         return values
     
     @staticmethod
@@ -94,57 +88,65 @@ class VeggyConfiguration(models.Model):
         and data types i.e. min_ph = float(), min_temp = int(), etc. and provides for custom 
         validation for user input i.e. if max_temp < min_temp: raise ValueError('min > max').
 
-        config values should always be validated i.e.
-        config.validate_unique_values(config.get_unique_values(sorted(config.get_values(), key=...)))
+        this whole class is susceptible to be deprecated and replaced with built-in 
+        Condition(s) and ConditionGroups instances.
         """
         if not values:
             raise ValueError(u'empty list')
-
-        max_temp = int()
-        min_temp = int()
-
-        max_ph = float()
-        min_ph = float()
-
+        
         for elem in values:
             option = ConfigurationOption.objects.get(pk=elem[u'variable_id'])
-            if option.option_label == u'max_temp':
-                max_temp = int(elem[u'value']) 
-            elif option.option_label == u'min_temp':
-                min_temp = int(elem[u'value'])
+            if option.option_label == u'min_temp':
+                min_temp = float(elem[u'value'])
+            elif option.option_label == u'max_temp':
+                max_temp = float(elem[u'value']) 
             elif option.option_label == u'max_ph':
                 min_ph = float(elem[u'value'])
             elif option.option_label == u'min_ph':
                 max_ph = float(elem[u'value'])
+            elif option.option_label == u'min_ec':
+                min_ec = float(elem[u'value'])
+            elif option.option_label == u'min_rh':
+                min_rh = int(elem[u'value'])
+            elif option.option_label == u'max_rh':
+                max_rh = int(elem[u'value'])
 
         if min_temp and max_temp:
-            validate_greater_than(max_temp, min_temp)
+            validate_greater_than(min_val=min_temp, max_val=max_temp)
         
         if min_ph or max_ph:
             ph_range = range(15)[1:]    
             if min_ph:
-                validate_value_in_range(min_ph, ph_range)
+                validate_value_in_range(val=min_ph, max_range=ph_range)
             if max_ph:
-                validate_value_in_range(max_ph, ph_range)
+                validate_value_in_range(val=max_ph, max_range=ph_range)
+        
+        if min_ec and max_ec:
+            validate_greater_than(min_val=min_ec, max_val=min_ec)
 
         if min_ph and max_ph:
-            validate_greater_than(max_ph, min_ph)
+            validate_greater_than(min_val=min_ph, max_val=max_ph)
 
 
 # static validation methods
+# these methods are mainly purely for validating user input
+# user should define their own condition groups or this should be
+# transformed into a condition group maybe?
 def validate_greater_than(max_val, min_val):
     if min_val > max_val or min_val == max_val:
         raise ValueError('%s must not be greater than %s' % (min_val, max_val))   
         
+
 def validate_value_in_range(val, max_range):
     if val not in max_range:
         raise ValueError('%s must be in range %s' % (val, max_range))
 
+
 class UserInput(models.Model):
     """
-    this is where user input is stored for configuration options
+    this is where user input is stored for configuration options.
     """
-    veggy_config = models.ForeignKey('VeggyConfiguration', on_delete=models.CASCADE)
+    veggy_config = models.ForeignKey('VeggyConfiguration')
     variable = models.ForeignKey('ConfigurationOption')
     value = models.CharField(max_length=10)
     class Meta:
@@ -155,15 +157,11 @@ class UserInput(models.Model):
 
 class ConfigurationOption(models.Model):
     """
-    configuration options with a comprehensive lable i.e. max_temp, 
+    configuration options with a comprehensive label i.e. max_temp, 
     max_ph, etc. and optionally a parent_option for classification
     """
-    # options can be classified with parent options i.e.:
-    # option = ConfigurationOption(option_label="temperature")
-    # max_temp = ConfigurationOption(option_label="max_temp", parent_option=option)
-    # min_temp = ConfigurationOption(option_label="min_temp", parent_option=option)
     parent_option = models.ForeignKey('ConfigurationOption', null=True, on_delete=models.SET_NULL)
-    option_label = models.CharField(max_length=30)
+    option_label = models.CharField(max_length=30, unique=True)
     def __unicode__(self):
         return self.option_label
 
@@ -204,12 +202,17 @@ class Reading(models.Model):
 
 class RPiPin(models.Model):
     """
-    raspberry pi pin mappings.
+    pin mappings class - built and tested on RPi (fixtures available) but generic 
+    enough to accomodate for any i/o device.
     """
-    number = models.SmallIntegerField(null=False, blank=False, editable=False)
+    pin_number = models.SmallIntegerField(null=False, blank=False, editable=False)
     # i.e. io_1, io_2, out_5v, ground
-    label = models.CharField(max_length=10)
-    sensor = models.ForeignKey("Sensor", null=False)
+    label = models.CharField(max_length=10, null=False, blank=False, editable=False)
+    # changed the null relationship value to True
+    # i.e. ground pins will not have a sensor
+    sensor = models.ForeignKey("Sensor", null=True)
+    def __unicode__(self):
+        return "%s: %s" % (self.pin_number, self.label)
 
 
 class Sensor(models.Model):
