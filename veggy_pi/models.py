@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
-from . funcs import is_number, all_numbers
+from . funcs import is_number, all_numbers, is_greater_than, value_in_range
 
 
 class VeggyConfiguration(models.Model):
@@ -136,50 +136,36 @@ class VeggyConfiguration(models.Model):
                 raise ValueError(_(u'temp_input elements require a temperature format type'))
 
             if min_temp:
-                validate_value_in_range(val=min_temp, max_range=temp_range)
+                value_in_range(val=min_temp, max_range=temp_range)
                     
             if max_temp: 
-                validate_value_in_range(val=max_temp, max_range=temp_range)
+                value_in_range(val=max_temp, max_range=temp_range)
         if min_temp and max_temp:
-            validate_greater_than(max_val=max_temp, min_val=min_temp)
+            is_greater_than(max_val=max_temp, min_val=min_temp)
 
         # ph 
         if min_ph or max_ph:
             ph_range = range(15)[1:]    
             if min_ph:
-                validate_value_in_range(val=min_ph, max_range=ph_range)
+                value_in_range(val=min_ph, max_range=ph_range)
             if max_ph:
-                validate_value_in_range(val=max_ph, max_range=ph_range)
+                value_in_range(val=max_ph, max_range=ph_range)
         if min_ph and max_ph:
-            validate_greater_than(max_val=max_ph, min_val=min_ph)
+            is_greater_than(max_val=max_ph, min_val=min_ph)
 
         # ec
         if min_ec and max_ec:
-            validate_greater_than(max_val=max_ec, min_val=min_ec)
+            is_greater_than(max_val=max_ec, min_val=min_ec)
         
         # relative humidity
         if min_rh or max_rh:
             rh_range = range(0,100)
             if min_rh:
-                validate_value_in_range(val=min_rh, max_range=rh_range)
+                value_in_range(val=min_rh, max_range=rh_range)
             if max_rh:
-                validate_value_in_range(val=max_rh, max_range=rh_range)
+                value_in_range(val=max_rh, max_range=rh_range)
         if min_rh and max_rh:
-            validate_greater_than(max_val=max_rh, min_val=min_rh) 
-
-
-# static validation methods
-# these methods are mainly purely for validating user input
-# user should define their own condition groups or this should be
-# transformed into a condition group maybe?
-def validate_greater_than(max_val, min_val):
-    if min_val > max_val or min_val == max_val:
-        raise ValueError(_('%s must not be greater than %s' % (min_val, max_val))) 
-        
-
-def validate_value_in_range(val, max_range):
-    if val not in max_range:
-        raise ValueError(_('%s must be in range %s' % (val, max_range)))
+            is_greater_than(max_val=max_rh, min_val=min_rh) 
 
 
 class UserInput(models.Model):
