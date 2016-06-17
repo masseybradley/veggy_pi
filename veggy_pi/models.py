@@ -7,6 +7,10 @@ from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
+
+import json
+
+
 from . funcs import is_number, all_numbers, is_greater_than, value_in_range, list_val_to_int, shift_bit_list
 
 
@@ -225,6 +229,8 @@ class Reading(VeggyModel):
         super(Reading, self).save(*args, **kwargs)
         self.sensor.current_reading = self
         self.sensor.save()
+    def __unicode__(self):
+        return "%s: %s - %s" % (self.created_at, self.sensor.name, self.data)
 
 
 class Pin(models.Model):
@@ -296,9 +302,18 @@ class DHT22Sensor(Sensor):
         if total == csum:
             # save data here after the checksum has been verified
             # or bail out before doing anything else
-            rh = float(shift_bit_list(bit_list=list_val_to_int(relative_humidity)))
-            temp = float(shift_bit_list(bit_list=list_val_to_int(temperature)))
-            print rh / 10, temp / 10
+            rh = {u'relative_humidity': float(shift_bit_list(bit_list=list_val_to_int(relative_humidity)))}
+            temp = {u'temperature': float(shift_bit_list(bit_list=list_val_to_int(temperature)))}
+            
+            reading = []
+            reading.append(rh)
+            reading.append(temp)
+
+            # should serialize and save the readings to json by default imho
+            current_reading = Reading.objects.create(sensor=self, data=json.dumps(reading))
+            self.current_reading = current_reading
+            self.save()
+            
         else:
             raise ValueError(u'sensor read an invalid checksum.')
 
