@@ -32,3 +32,20 @@ def value_in_range(val, max_range):
         raise ValueError(_('%s must be in range %s' % (val, max_range)))
 
 
+def list_val_to_int(bit_list=None):
+    if not bit_list:
+        raise ValueError(u'no list provided in function call.')
+
+    bit_list = [ int(x) for x in bit_list ]
+    return bit_list
+
+
+def shift_bit_list(bit_list=None):
+    # takes a list of bits and for each bit shifts and returns an integer value
+    if not bit_list:
+        raise ValueError(u'no list provided to function call.')
+
+    out = 0 
+    for bit in bit_list:
+        out = (out << 1) | bit 
+    return out

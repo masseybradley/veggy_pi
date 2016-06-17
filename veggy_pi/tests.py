@@ -13,6 +13,8 @@ from . models import (
     VeggyConfiguration,
     ConfigurationOption,
     UserInput,
+    Pin,
+    DHT22Sensor,
     )
 
 from www.settings import TIME_ZONE
@@ -325,3 +327,16 @@ class TestVeggyConfiguration(TestCase):
         VeggyConfiguration.objects.all().delete()
         UserInput.objects.all().delete()
         ConfigurationOption.objects.all().delete()
+
+
+class TestDHT22SensorTestCase(TestCase):
+    # these are just place holders for the moment
+    def setUp(self):
+        self.pin_1 = Pin(pin_number=1, label=u'gpio_1')
+        self.pin_1.save()
+    
+        self.dht22_sensor = DHT22Sensor(name=u'dht22', pin=self.pin_1)
+        self.dht22_sensor.save()
+
+    def test_dht22_read(self):
+        self.dht22_sensor.read()

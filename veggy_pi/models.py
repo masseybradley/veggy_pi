@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
-from . funcs import is_number, all_numbers, is_greater_than, value_in_range
+from . funcs import is_number, all_numbers, is_greater_than, value_in_range, list_val_to_int, shift_bit_list
 
 
 class VeggyConfiguration(models.Model):
@@ -213,8 +213,9 @@ class Input(VeggyModel):
     value = models.TextField()
 
 
-class Reading(models.Model):
+class Reading(VeggyModel):
     sensor = models.ForeignKey("Sensor", null=False)
+    data = models.TextField()
 
     def save(self, *args, **kwargs):
         """
@@ -226,7 +227,7 @@ class Reading(models.Model):
         self.sensor.save()
 
 
-class RPiPin(models.Model):
+class Pin(models.Model):
     """
     pin mappings class - built and tested on RPi (fixtures available) but generic 
     enough to accomodate for any i/o device.
@@ -234,16 +235,18 @@ class RPiPin(models.Model):
     pin_number = models.SmallIntegerField(null=False, blank=False, editable=False)
     # i.e. io_1, io_2, out_5v, ground
     label = models.CharField(max_length=10, null=False, blank=False, editable=False)
-    # changed the null relationship value to True
-    # i.e. ground pins will not have a sensor
-    sensor = models.ForeignKey("Sensor", null=True)
     def __unicode__(self):
         return "%s: %s" % (self.pin_number, self.label)
 
 
 class Sensor(models.Model):
+    """
+    generic sensor class - this class is proxied with actual physical sensors which define
+    their own read method for each physical sensor. 
+    """
     name = models.TextField(null=False, blank=False)
     current_reading = models.ForeignKey("Reading", null=True, default=None, related_name="latest_sensor")
+    pin = models.ForeignKey("Pin", null=True)
 
     def plug_into(self, pin_numbers):
         self.unplug() # remove any existing connection first
@@ -256,6 +259,48 @@ class Sensor(models.Model):
 
     def read(self):
         raise NotImplemented()
+
+
+class DHT22Sensor(Sensor):
+    class Meta:
+        proxy = True
+
+    def read(self):
+        # returns 40 bits i.e. 0000 0010 1000 1100  0000 0001 0101 1111  1110 1110
+        #                      relative humidity    temperature          checksum
+
+        data = '0000001010001100000000010101111111101110'
+        bit_list = []
+        for bit in data:
+            bit_list.append(bit)
+    
+        # first 16 bits
+        relative_humidity = bit_list[0:16]
+    
+        # bits 17 to 40-8
+        temperature = bit_list[16:-8]
+   
+        # sign bit represents +/- temperature range
+        if temperature[0:1] == u'1':
+            print "temp is negative"
+
+        # last 8 bits
+        checksum = bit_list[-8:]
+
+        # total is the sum of each individual byte which needs to be equal to the checksum
+        total = shift_bit_list(list_val_to_int(temperature[0:8])) + shift_bit_list(list_val_to_int(temperature[-8:])) + \
+                shift_bit_list(list_val_to_int(relative_humidity[0:8])) + shift_bit_list(list_val_to_int(relative_humidity[-8:]))
+
+        csum = int(shift_bit_list(bit_list=list_val_to_int(checksum))) 
+
+        if total == csum:
+            # save data here after the checksum has been verified
+            # or bail out before doing anything else
+            rh = float(shift_bit_list(bit_list=list_val_to_int(relative_humidity)))
+            temp = float(shift_bit_list(bit_list=list_val_to_int(temperature)))
+            print rh / 10, temp / 10
+        else:
+            raise ValueError(u'sensor read an invalid checksum.')
 
 
 class Thermometer(Sensor):
