@@ -1,120 +1,120 @@
-- model: veggy_pi.rpipin
-  pk: 1
-  fields: {pin_number: 1, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
-  pk: 2
-  fields: {pin_number: 2, label: gpio_02, sensor: null}
-- model: veggy_pi.rpipin
-  pk: 3
-  fields: {pin_number: 3, label: gpio_03, sensor: null}
-- model: veggy_pi.rpipin
+- model: veggy_pi.pin
   pk: 4
-  fields: {pin_number: 4, label: gpio_04, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 1, label: gnd}
+- model: veggy_pi.pin
   pk: 5
-  fields: {pin_number: 5, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 2, label: gpio_02}
+- model: veggy_pi.pin
   pk: 6
-  fields: {pin_number: 6, label: gpio_17, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 3, label: gpio_03}
+- model: veggy_pi.pin
   pk: 7
-  fields: {pin_number: 7, label: gpio_27, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 4, label: gpio_04}
+- model: veggy_pi.pin
   pk: 8
-  fields: {pin_number: 8, label: gpio_22, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 5, label: gnd}
+- model: veggy_pi.pin
   pk: 9
-  fields: {pin_number: 9, label: 3.3v, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 6, label: gpio_17}
+- model: veggy_pi.pin
   pk: 10
-  fields: {pin_number: 10, label: gpio_10, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 7, label: gpio_27}
+- model: veggy_pi.pin
   pk: 11
-  fields: {pin_number: 11, label: gpio_09, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 8, label: gpio_22}
+- model: veggy_pi.pin
   pk: 12
-  fields: {pin_number: 12, label: gpio_11, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 9, label: 3.3v}
+- model: veggy_pi.pin
   pk: 13
-  fields: {pin_number: 13, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 10, label: gpio_10}
+- model: veggy_pi.pin
   pk: 14
-  fields: {pin_number: 14, label: dnc, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 11, label: gpio_09}
+- model: veggy_pi.pin
   pk: 15
-  fields: {pin_number: 15, label: gpio_05, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 12, label: gpio_11}
+- model: veggy_pi.pin
   pk: 16
-  fields: {pin_number: 16, label: gpio_06, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 13, label: gnd}
+- model: veggy_pi.pin
   pk: 17
-  fields: {pin_number: 17, label: gpio_13, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 14, label: dnc}
+- model: veggy_pi.pin
   pk: 18
-  fields: {pin_number: 18, label: gpio_19, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 15, label: gpio_05}
+- model: veggy_pi.pin
   pk: 19
-  fields: {pin_number: 19, label: gpio_26, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 16, label: gpio_06}
+- model: veggy_pi.pin
   pk: 20
-  fields: {pin_number: 20, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 17, label: gpio_13}
+- model: veggy_pi.pin
   pk: 21
-  fields: {pin_number: 21, label: gpio_21, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 18, label: gpio_19}
+- model: veggy_pi.pin
   pk: 22
-  fields: {pin_number: 22, label: gpio_20, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 19, label: gpio_26}
+- model: veggy_pi.pin
   pk: 23
-  fields: {pin_number: 23, label: gpio_16, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 20, label: gnd}
+- model: veggy_pi.pin
   pk: 24
-  fields: {pin_number: 24, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 21, label: gpio_21}
+- model: veggy_pi.pin
   pk: 25
-  fields: {pin_number: 25, label: gpio_12, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 22, label: gpio_20}
+- model: veggy_pi.pin
   pk: 26
-  fields: {pin_number: 26, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 23, label: gpio_16}
+- model: veggy_pi.pin
   pk: 27
-  fields: {pin_number: 27, label: dnc, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 24, label: gnd}
+- model: veggy_pi.pin
   pk: 28
-  fields: {pin_number: 28, label: gpio_07, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 25, label: gpio_12}
+- model: veggy_pi.pin
   pk: 29
-  fields: {pin_number: 29, label: gpio_08, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 26, label: gnd}
+- model: veggy_pi.pin
   pk: 30
-  fields: {pin_number: 30, label: gpio_25, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 27, label: dnc}
+- model: veggy_pi.pin
   pk: 31
-  fields: {pin_number: 31, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 28, label: gpio_07}
+- model: veggy_pi.pin
   pk: 32
-  fields: {pin_number: 32, label: gpio_24, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 29, label: gpio_08}
+- model: veggy_pi.pin
   pk: 33
-  fields: {pin_number: 33, label: gpio_23, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 30, label: gpio_25}
+- model: veggy_pi.pin
   pk: 34
-  fields: {pin_number: 34, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 31, label: gnd}
+- model: veggy_pi.pin
   pk: 35
-  fields: {pin_number: 35, label: gpio_18, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 32, label: gpio_24}
+- model: veggy_pi.pin
   pk: 36
-  fields: {pin_number: 36, label: gpio_15, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 33, label: gpio_23}
+- model: veggy_pi.pin
   pk: 37
-  fields: {pin_number: 37, label: gpio_14, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 34, label: gnd}
+- model: veggy_pi.pin
   pk: 38
-  fields: {pin_number: 38, label: gnd, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 35, label: gpio_18}
+- model: veggy_pi.pin
   pk: 39
-  fields: {pin_number: 39, label: 5v, sensor: null}
-- model: veggy_pi.rpipin
+  fields: {pin_number: 36, label: gpio_15}
+- model: veggy_pi.pin
   pk: 40
-  fields: {pin_number: 40, label: 5v, sensor: null}
+  fields: {pin_number: 37, label: gpio_14}
+- model: veggy_pi.pin
+  pk: 41
+  fields: {pin_number: 38, label: gnd}
+- model: veggy_pi.pin
+  pk: 42
+  fields: {pin_number: 39, label: 5v}
+- model: veggy_pi.pin
+  pk: 43
+  fields: {pin_number: 40, label: 5v}
