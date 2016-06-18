@@ -245,6 +245,16 @@ class Pin(models.Model):
         return "%s: %s" % (self.pin_number, self.label)
 
 
+class RPiPin(Pin):
+    class Meta:
+        proxy = True
+    def setup(self):
+        try:
+            import RPi.GPIO as GPIO
+        except Exception as ex:
+            raise ex
+
+
 class Sensor(models.Model):
     """
     generic sensor class - this class is proxied with actual physical sensors which define
