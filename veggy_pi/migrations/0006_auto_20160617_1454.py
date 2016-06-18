@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import datetime
+import pytz
 from django.db import migrations, models
 
 
@@ -16,13 +17,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reading',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default=datetime.datetime(2016, 6, 17, 14, 54, 49, 154783)),
+            field=models.DateTimeField(auto_now_add=True, default=datetime.datetime(2016, 6, 17, 14, 54, 49, 154783, tzinfo=pytz.utc)),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='reading',
             name='data',
-            field=models.TextField(default=datetime.datetime(2016, 6, 17, 14, 54, 59, 171137)),
+            field=models.TextField(default=datetime.datetime(2016, 6, 17, 14, 54, 59, 171137, tzinfo=pytz.utc)),
             preserve_default=False,
         ),
     ]
