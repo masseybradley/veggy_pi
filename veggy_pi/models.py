@@ -8,7 +8,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 
-from bitarray import bitarray
+import bitarray
 import json
 
 
@@ -323,50 +323,7 @@ class DHT22Sensor(Sensor):
     def read(self):
         # returns 40 bits i.e. 0000 0010 1000 1100  0000 0001 0101 1111  1110 1110
         #                      relative humidity    temperature          checksum
-
-        data = bitarray('0000001010001100000000010101111111101110', endian='little')
-        print data     
-    
-        # first 16 bits
-        relative_humidity = data[0:16]
-    
-        # bits 17 to 40-8
-        temperature = data[16:-8]
-   
-        # sign bit represents +/- temperature range
-        if temperature[0:1] == 1:
-            print "temp is negative"
-
-        # last 8 bits
-        checksum = data[-8:]
-
-        print relative_humidity
-        print temperature
-        print checksum
-
-#        # total is the sum of each individual byte which needs to be equal to the checksum
-#        total = shift_bit_list(temperature[0:8]) + shift_bit_list(temperature[-8:]) + \
-#                shift_bit_list(relative_humidity[0:8]) + shift_bit_list(relative_humidity[-8:])
-#
-#        csum = int(shift_bit_list(bit_list=checksum)) 
-#
-#        if total == csum:
-#            # save data here after the checksum has been verified
-#            # or bail out before doing anything else
-#            rh = {u'relative_humidity': float(shift_bit_list(bit_list=relative_humidity))}
-#            temp = {u'temperature': float(shift_bit_list(bit_list=temperature))}
-#            
-#            reading = []
-#            reading.append(rh)
-#            reading.append(temp)
-#
-#            # should serialize and save the readings to json by default imho
-#            current_reading = Reading.objects.create(sensor=self, data=json.dumps(reading))
-#            self.current_reading = current_reading
-#            self.save()
-#            
-#        else:
-#            raise ValueError(u'sensor read an invalid checksum.')
+        pass
 
 
 class Thermometer(Sensor):
