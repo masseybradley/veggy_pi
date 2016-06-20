@@ -7,7 +7,12 @@ from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
-from . funcs import is_number, all_numbers, is_greater_than, value_in_range
+
+import bitarray
+import json
+
+
+from . funcs import is_number, all_numbers, is_greater_than, value_in_range, list_val_to_int, shift_bit_list
 
 
 class VeggyConfiguration(models.Model):
@@ -213,8 +218,9 @@ class Input(VeggyModel):
     value = models.TextField()
 
 
-class Reading(models.Model):
+class Reading(VeggyModel):
     sensor = models.ForeignKey("Sensor", null=False)
+    data = models.TextField()
 
     def save(self, *args, **kwargs):
         """
@@ -224,26 +230,78 @@ class Reading(models.Model):
         super(Reading, self).save(*args, **kwargs)
         self.sensor.current_reading = self
         self.sensor.save()
+    def __unicode__(self):
+        return "%s: %s - %s" % (self.created_at, self.sensor.name, self.data)
 
 
-class RPiPin(models.Model):
+class Pin(models.Model):
     """
     pin mappings class - built and tested on RPi (fixtures available) but generic 
     enough to accomodate for any i/o device.
     """
     pin_number = models.SmallIntegerField(null=False, blank=False, editable=False)
     # i.e. io_1, io_2, out_5v, ground
+    # to think about: maybe add a current_state here being either input or output saved
+    # with a fk to reading in order to have a tracking of when a pin changed from input to output
+    # or set low to high
     label = models.CharField(max_length=10, null=False, blank=False, editable=False)
-    # changed the null relationship value to True
-    # i.e. ground pins will not have a sensor
-    sensor = models.ForeignKey("Sensor", null=True)
     def __unicode__(self):
         return "%s: %s" % (self.pin_number, self.label)
 
 
+class RPiPin(Pin):
+    """
+    rasperry pi pin mappings and controller - fixtures for 40 pin pi model b+ / pi 2 model b
+    """
+    class Meta:
+        proxy = True
+
+    def setup(self):
+        try:
+            import RPi.GPIO as GPIO
+            global GPIO
+            print "GPIO ready."
+            # should be replaced later on with a user config option i.e. GPIO_MODE
+            GPIO.setmode(GPIO.BOARD)
+        except Exception as ex:
+            raise ex
+        
+    def set_mode(self, mode):
+        # pin mode - valid modes are either input or output
+        io_pins = (3, 5, 7, 8, 10, 11, 12, 13, 15, 16, 18, 19, 21, 22, 23, 24, 26, 27, 28, 29, 31, 32, 33, 35, 36, 37, 38, 40)
+
+        # where mode is either input or output 
+        if not mode:
+            raise ValueError(u'no mode provided.')
+
+        if self.pin_number not in io_pins:
+            raise ValueError(u'can not set a non io pin mode.')
+
+        # need sudo privileges to set the pin mode
+        if mode == u'input':
+            GPIO.setup(self.pin_number, GPIO.IN)
+        elif mode == u'output':
+            GPIO.setup(self.pin_number, GPIO.OUT)
+        else:
+            raise ValueError(u'valid modes are input or output.')
+        
+    def set_output(self, out=False):
+        # true = HIGH
+        # flase = LOW
+        if out:
+            GPIO.output(self.pin_number, GPIO.HIGH)
+        else:
+            GPIO.output(self.pin_number, GPIO.LOW)
+
+
 class Sensor(models.Model):
+    """
+    generic sensor class - this class is proxied with actual physical sensors which define
+    their own read method for each physical sensor. 
+    """
     name = models.TextField(null=False, blank=False)
     current_reading = models.ForeignKey("Reading", null=True, default=None, related_name="latest_sensor")
+    pin = models.ForeignKey("Pin", null=True)
 
     def plug_into(self, pin_numbers):
         self.unplug() # remove any existing connection first
@@ -256,6 +314,16 @@ class Sensor(models.Model):
 
     def read(self):
         raise NotImplemented()
+
+
+class DHT22Sensor(Sensor):
+    class Meta:
+        proxy = True
+
+    def read(self):
+        # returns 40 bits i.e. 0000 0010 1000 1100  0000 0001 0101 1111  1110 1110
+        #                      relative humidity    temperature          checksum
+        pass
 
 
 class Thermometer(Sensor):

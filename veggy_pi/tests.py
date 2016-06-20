@@ -13,6 +13,8 @@ from . models import (
     VeggyConfiguration,
     ConfigurationOption,
     UserInput,
+    Pin,
+    DHT22Sensor,
     )
 
 from www.settings import TIME_ZONE
